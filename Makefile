@@ -23,7 +23,7 @@ FIRST        = 80
 LAST         = 98
 BOARDS       = $(addprefix $(IP_GROUP),$(shell seq -s " " $(FIRST) $(LAST)))
 #BOARDS       = $(filter-out $(SERVER_IP),$(shell nmap -sn -oG - $(IP_GROUP)50-99 | awk '/Host:/ {print $$2}'))
-#BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98 192.168.2.99
+#BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98
 MY_IP        = $(shell ifconfig | awk '/$(IP_GROUP)/ {print $$2}' | head -1)
 
 # Client credentials
@@ -55,13 +55,15 @@ endef
 
 ifeq ($(SERVER_IP),$(MY_IP))
 
-#reboot_boards:
-#	for ip in $(BOARDS); do \
-#                $(call ssh2board,$$ip,-f,reboot); \
-#        done
+reboot_boards:
+	@echo "The following boards will be rebooted: $(BOARDS)"
+	@echo -n "Are you sure you want to reboot? All pending jobs will be terminated. [y/N] " && read ans && [ $${ans:-N} = y ]
+	for ip in $(BOARDS); do \
+                $(call ssh2board,$$ip,-f,reboot); \
+        done
 
-#query_boards:
-#	@echo $(BOARDS)
+ping_boards:
+	nmap -sn -oG - $(IP_GROUP)1-99
 
 query_ssh:
 	@echo $(shell $(call ssh_sessions))
