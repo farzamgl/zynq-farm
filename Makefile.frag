@@ -1,0 +1,20 @@
+# Allocate benchmarks to boards here
+192.168.3.80_benchs := 464.h264ref
+192.168.3.81_benchs := 437.leslie3d
+192.168.3.82_benchs := 507.cactuBSSN_r
+192.168.3.83_benchs := 548.exchange2_r
+192.168.3.84_benchs := 444.namd
+192.168.3.85_benchs := 510.parest_r
+192.168.3.86_benchs := 433.milc
+192.168.3.87_benchs := 541.leela_r
+192.168.3.88_benchs := 531.deepsjeng_r
+192.168.3.89_benchs := 410.bwaves
+192.168.3.90_benchs := 473.astar
+192.168.3.91_benchs := 508.namd_r
+192.168.3.92_benchs := 172.mgrid
+192.168.3.93_benchs := 447.dealII
+192.168.3.94_benchs := 458.sjeng
+192.168.3.95_benchs := 544.nab_r
+192.168.3.96_benchs := 456.hmmer 256.bzip2 549.fotonik3d_r 445.gobmk 454.calculix 462.libquantum 300.twolf
+192.168.3.97_benchs := 186.crafty 471.omnetpp 164.gzip 173.applu 450.soplex 197.parser 188.ammp 175.vpr
+192.168.3.98_benchs := 401.bzip2 557.xz_r 171.swim 183.equake 177.mesa 181.mcf
