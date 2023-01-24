@@ -50,7 +50,7 @@ define ssh_barrier
 endef
 
 define ssh2board
-	sshpass -p "$(CLIENT_PASS)" ssh $(CLIENT_UNAME)@$1 $2 "echo $(CLIENT_PASS) | sudo -S $3"
+	sshpass -p "$(CLIENT_PASS)" ssh -o StrictHostKeychecking=no $(CLIENT_UNAME)@$1 $2 "echo $(CLIENT_PASS) | sudo -S $3"
 endef
 
 ifeq ($(SERVER_IP),$(MY_IP))
