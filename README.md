@@ -17,7 +17,7 @@ This setup only needs to be done once and doesn't need to be repeated unless you
 
 ## Getting started
 ### Allocating jobs
-First, you need to statically allocate the benchmarks to each board in `Makefile.frag`. The boards are named by their local IP address. Currently we have 20 Ultra96v2 boards on the `192.168.3.80-99` address range. The board at `192.168.3.99` is reserved for CI so that leaves us with 19 boards at `192.168.3.80-98`. Finally, you should copy your NBF files to the `benchs` directory so the boards can access them for testing.
+First, you need to statically allocate the benchmarks to each board in `Makefile.frag`. The boards are named by their local IP address. Currently we have 20 Ultra96v2 boards on the `192.168.3.80-99` address range. The boards at `192.168.3.98-99` are reserved for CI so that leaves us with 18 boards at `192.168.3.80-97`. Finally, you should copy your NBF files to the `benchs` directory so the boards can access them for testing.
 
 ### Setting up the Makefile
 Next, to make sure multiple users do not corrupt each others mountpoints on the boards, you need to update the `USER` variable in the Makefile to your name. So a mountpoint will be created at `/home/xilinx/$(USER)/mnt/nfs_client` for your work.

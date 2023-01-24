@@ -4,7 +4,7 @@ include Makefile.frag
 SHELL := /bin/bash
 
 # Set this to your name
-USER        ?= joe
+NAME        ?= joe
 
 # Work branch and example
 URL         ?= git@github.com:black-parrot-hdk/zynq-parrot.git
@@ -14,13 +14,13 @@ BITSTREAM   ?= blackparrot_bd_1.tar.xz.b64
 
 # Server and client NFS mounts
 SERVER_MNT   = $(CURDIR)
-BOARD_MNT    = /home/xilinx/$(USER)/mnt/nfs_client
+BOARD_MNT    = /home/xilinx/$(NAME)/mnt/nfs_client
 
 # Board IPs
 IP_GROUP     = 192.168.3.
 SERVER_IP    = $(IP_GROUP)100
 FIRST        = 80
-LAST         = 98
+LAST         = 97
 BOARDS       = $(addprefix $(IP_GROUP),$(shell seq -s " " $(FIRST) $(LAST)))
 #BOARDS       = $(filter-out $(SERVER_IP),$(shell nmap -sn -oG - $(IP_GROUP)50-99 | awk '/Host:/ {print $$2}'))
 #BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98
