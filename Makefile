@@ -30,8 +30,11 @@ MY_IP        = $(shell ifconfig | awk '/$(IP_GROUP)/ {print $$2}' | head -1)
 CLIENT_UNAME = xilinx
 CLIENT_PASS  = xilinx
 
+empty :=
+space := $(empty) $(empty)
+
 define ssh_sessions
-	ss | grep -i ':ssh' | awk '/:ssh/ {print $$6}' | grep -i '$(IP_GROUP)*'
+	ss | grep -i ':ssh' | awk '/:ssh/ {print $$6}' | grep -i '$(subst $(space),\|,$(BOARDS))'
 endef
 
 define ssh_wait
