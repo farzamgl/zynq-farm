@@ -10,17 +10,23 @@ NAME        ?= joe
 URL         ?= git@github.com:black-parrot-hdk/zynq-parrot.git
 BRANCH      ?= master
 EXAMPLE     ?= black-parrot-example
-BITSTREAM   ?= blackparrot_bd_1.tar.xz.b64 
+
+# Board and Vivado info
+BOARDNAME      = ultra96v2
+VIVADO_VERSION = 2020.1
+VIVADO_MODE    = batch
+FPGA_ARGS      = BOARDNAME=$(BOARDNAME) VIVADO_VERSION=$(VIVADO_VERSION) VIVADO_MODE=$(VIVADO_MODE)
 
 # Server and client NFS mounts
 SERVER_MNT   = $(CURDIR)
 BOARD_MNT    = /home/xilinx/$(NAME)/mnt/nfs_client
+BITSTREAM    = blackparrot_bd_1.$(BOARDNAME).tar.xz.b64
 
 # Board IPs
 IP_GROUP     = 192.168.3.
 SERVER_IP    = $(IP_GROUP)100
 FIRST        = 80
-LAST         = 97
+LAST         = 99
 BOARDS       = $(addprefix $(IP_GROUP),$(shell seq -s " " $(FIRST) $(LAST)))
 #BOARDS       = $(filter-out $(SERVER_IP),$(shell nmap -sn -oG - $(IP_GROUP)50-99 | awk '/Host:/ {print $$2}'))
 #BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98
@@ -89,7 +95,7 @@ gen_dirs:
 	rm -rf $(SERVER_MNT)/zynq-parrot
 
 clean_dirs:
-	rm -rf $(SERVER_MNT)/$(IP_GROUP)*
+	sudo rm -rf $(SERVER_MNT)/$(IP_GROUP)*
 
 mount_boards:
 	for ip in $(BOARDS); do \
@@ -120,18 +126,21 @@ run_benchs: pre_run $(foreach ip,$(BOARDS),$(ip).run)
 else
 
 ZPARROT_DIR = $(BOARD_MNT)/$(MY_IP)/zynq-parrot
-FPGA_DIR    = $(ZPARROT_DIR)/cosim/$(EXAMPLE)/ultra96v2
+EXAMPLE_DIR = $(ZPARROT_DIR)/cosim/$(EXAMPLE)
+FPGA_DIR    = $(EXAMPLE_DIR)/fpga
 
-$(FPGA_DIR)/$(BITSTREAM): | $(ZPARROT_DIR)
+$(EXAMPLE_DIR)/$(BITSTREAM): | $(ZPARROT_DIR)
 	cp $(BOARD_MNT)/$(BITSTREAM) $@
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) unpack_bitstream
 
-load_bitstream: $(FPGA_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
+load_bitstream: $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
 	cat /proc/meminfo > $(BOARD_MNT)/$(MY_IP)/load.log 2>&1
-	$(MAKE) -C $(FPGA_DIR) unpack_bitstream >> $(BOARD_MNT)/$(MY_IP)/load.log 2>&1
-	$(MAKE) -C $(FPGA_DIR) load_bitstream >> $(BOARD_MNT)/$(MY_IP)/load.log 2>&1
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) unpack_bitstream >> $(BOARD_MNT)/$(MY_IP)/load.log 2>&1
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) load_bitstream >> $(BOARD_MNT)/$(MY_IP)/load.log 2>&1
 
-run: $(NBF_FILE) | $(ZPARROT_DIR)
-	$(MAKE) -C $(FPGA_DIR) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
+run: $(NBF_FILE) $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) load_bitstream > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).load.log 2>&1
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
 
 run_nbfs: $(NBF_FILES)
 	for nbf in $(NBF_FILES); do \
