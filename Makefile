@@ -28,13 +28,18 @@ SERVER_IP    = $(IP_GROUP)100
 FIRST        = 80
 LAST         = 99
 BOARDS       = $(addprefix $(IP_GROUP),$(shell seq -s " " $(FIRST) $(LAST)))
-#BOARDS       = $(filter-out $(SERVER_IP),$(shell nmap -sn -oG - $(IP_GROUP)50-99 | awk '/Host:/ {print $$2}'))
 #BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98
 MY_IP        = $(shell ifconfig | awk '/$(IP_GROUP)/ {print $$2}' | head -1)
 
 # Client credentials
 CLIENT_UNAME = xilinx
 CLIENT_PASS  = xilinx
+
+ifdef PK
+BENCHS = benchspk
+else
+BENCHS = benchs
+endif
 
 empty :=
 space := $(empty) $(empty)
@@ -119,7 +124,7 @@ load_bitstreams: pre_run
 
 %.run:
 	@echo Running $($*_benchs) on $@
-	$(call ssh2board,$*,-f,$(MAKE) -C $(BOARD_MNT) run_nbfs NBF_FILES=\"$(addsuffix .nbf,$(addprefix $(BOARD_MNT)/benchs/,$($*_benchs)))\" > /dev/null 2>&1)
+	$(call ssh2board,$*,-f,$(MAKE) -C $(BOARD_MNT) PK=$(PK) run_nbfs NBF_FILES=\"$(addsuffix .nbf,$(addprefix $(BOARD_MNT)/$(BENCHS)/,$($*_benchs)))\" > /dev/null 2>&1)
 
 run_benchs: pre_run $(foreach ip,$(BOARDS),$(ip).run)
 
@@ -140,7 +145,13 @@ load_bitstream: $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
 
 run: $(NBF_FILE) $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
 	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) load_bitstream > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).load.log 2>&1
-	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
+ifdef PK
+	cp $(BOARD_MNT)/$(BENCHS)/inputs/$(basename $(notdir $<))/* $(FPGA_DIR)/work
+endif
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) PK=$(PK) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
+ifdef PK
+	cd $(FPGA_DIR)/work && rm -i !($(basename $(notdir $<)).*|control-program)
+endif
 
 run_nbfs: $(NBF_FILES)
 	for nbf in $(NBF_FILES); do \
