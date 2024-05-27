@@ -28,18 +28,13 @@ SERVER_IP    = $(IP_GROUP)100
 FIRST        = 80
 LAST         = 99
 BOARDS       = $(addprefix $(IP_GROUP),$(shell seq -s " " $(FIRST) $(LAST)))
-#BOARDS       = 192.168.2.95 192.168.2.96 192.168.2.97 192.168.2.98
 MY_IP        = $(shell ifconfig | awk '/$(IP_GROUP)/ {print $$2}' | head -1)
 
 # Client credentials
 CLIENT_UNAME = xilinx
 CLIENT_PASS  = xilinx
 
-ifdef PK
-BENCHS = benchspk
-else
 BENCHS = benchs
-endif
 
 empty :=
 space := $(empty) $(empty)
@@ -82,6 +77,9 @@ ping_boards:
 query_ssh:
 	@echo $(shell $(call ssh_sessions))
 
+query_boards:
+	@echo $(BOARDS)
+
 #query_mem:
 #	for ip in $(BOARDS); do \
 #		$(call ssh2board,$$ip,,cat /proc/meminfo); \
@@ -100,7 +98,9 @@ gen_dirs:
 	rm -rf $(SERVER_MNT)/zynq-parrot
 
 clean_dirs:
-	sudo rm -rf $(SERVER_MNT)/$(IP_GROUP)*
+	for ip in $(BOARDS); do \
+		sudo rm -rf $(SERVER_MNT)/$$ip; \
+	done
 
 mount_boards:
 	for ip in $(BOARDS); do \
@@ -124,9 +124,14 @@ load_bitstreams: pre_run
 
 %.run:
 	@echo Running $($*_benchs) on $@
-	$(call ssh2board,$*,-f,$(MAKE) -C $(BOARD_MNT) PK=$(PK) run_nbfs NBF_FILES=\"$(addsuffix .nbf,$(addprefix $(BOARD_MNT)/$(BENCHS)/,$($*_benchs)))\" > /dev/null 2>&1)
+	$(call ssh2board,$*,-f,$(MAKE) -C $(BOARD_MNT) run_nbfs NBF_FILES=\"$(addsuffix .nbf,$(addprefix $(BOARD_MNT)/$(BENCHS)/,$($*_benchs)))\" > /dev/null 2>&1)
 
 run_benchs: pre_run $(foreach ip,$(BOARDS),$(ip).run)
+
+kill_runs:
+	for ip in $(BOARDS); do \
+		$(call ssh2board,$$ip,,pkill control-program); \
+	done
 
 else
 
@@ -145,13 +150,7 @@ load_bitstream: $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
 
 run: $(NBF_FILE) $(EXAMPLE_DIR)/$(BITSTREAM) | $(ZPARROT_DIR)
 	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) load_bitstream > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).load.log 2>&1
-ifdef PK
-	cp $(BOARD_MNT)/$(BENCHS)/inputs/$(basename $(notdir $<))/* $(FPGA_DIR)/work
-endif
-	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) PK=$(PK) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
-ifdef PK
-	cd $(FPGA_DIR)/work && rm -i !($(basename $(notdir $<)).*|control-program)
-endif
+	$(MAKE) -C $(FPGA_DIR) $(FPGA_ARGS) run NBF_FILE=$< > $(BOARD_MNT)/$(MY_IP)/$(notdir $<).run.log 2>&1
 
 run_nbfs: $(NBF_FILES)
 	for nbf in $(NBF_FILES); do \
